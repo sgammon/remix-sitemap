@@ -141,14 +141,25 @@ export type GetSitemapParams = {
   appContext: AppLoadContext;
 };
 
+function matchesAnyExclusion(params: GetSitemapParams, route: string) {
+  const exclusions = (params.config.exclusions || [])
+  if (exclusions.filter((regexp) => (route.match(regexp)?.length ?? 0) > 0).length) {
+    return true;
+  }
+  return false;
+}
+
 async function IngestRoutes(params: GetSitemapParams) {
   const { config, context, request, appContext } = params;
   const routes = Object.keys(context.manifest.routes);
+  const filteredRoutes = routes.filter((route) => (
+    !matchesAnyExclusion(params, route)
+  ))
 
   if (config.rateLimit) {
     const limiter = new RateLimiter(config.rateLimit);
 
-    const entriesPromise = routes.map(async route => {
+    const entriesPromise = filteredRoutes.map(async route => {
       await limiter.allocate();
       const out = await getEntry({ route, config, context, request, appContext });
       limiter.free();
@@ -157,7 +168,7 @@ async function IngestRoutes(params: GetSitemapParams) {
 
     return (await Promise.all(entriesPromise)).flat().filter(truthy);
   } else {
-    const entriesPromise = routes.map(route =>
+    const entriesPromise = filteredRoutes.map(route =>
       getEntry({ route, config, context, request, appContext })
     );
 

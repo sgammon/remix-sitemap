@@ -97,6 +97,11 @@ export interface RemixSitemapConfig {
    * The cache to use.
    */
   cache?: Cache;
+
+  /**
+   * Exclusions to apply.
+   */
+  exclusions?: RegExp[];
 }
 
 export interface Cache {
