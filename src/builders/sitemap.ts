@@ -14,6 +14,7 @@ import { RateLimiter } from '../utils/rate-limiter';
 import { getEntry } from '../utils/entries';
 import { truthy } from '../utils/truthy';
 import { chunk } from '../utils/chunk';
+import { AppLoadContext } from '@remix-run/server-runtime';
 
 export const getAlternateRef = (alternateRefs: AlternateRef) => ({
   '@_rel': 'alternate',
@@ -137,10 +138,11 @@ export type GetSitemapParams = {
   config: Config;
   context: EntryContext;
   request: Request;
+  appContext: AppLoadContext;
 };
 
 async function IngestRoutes(params: GetSitemapParams) {
-  const { config, context, request } = params;
+  const { config, context, request, appContext } = params;
   const routes = Object.keys(context.manifest.routes);
 
   if (config.rateLimit) {
@@ -148,7 +150,7 @@ async function IngestRoutes(params: GetSitemapParams) {
 
     const entriesPromise = routes.map(async route => {
       await limiter.allocate();
-      const out = await getEntry({ route, config, context, request });
+      const out = await getEntry({ route, config, context, request, appContext });
       limiter.free();
       return out;
     });
@@ -156,7 +158,7 @@ async function IngestRoutes(params: GetSitemapParams) {
     return (await Promise.all(entriesPromise)).flat().filter(truthy);
   } else {
     const entriesPromise = routes.map(route =>
-      getEntry({ route, config, context, request })
+      getEntry({ route, config, context, request, appContext })
     );
 
     return (await Promise.all(entriesPromise)).flat().filter(truthy);

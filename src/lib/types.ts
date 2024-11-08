@@ -1,3 +1,5 @@
+import { AppLoadContext } from "@remix-run/server-runtime";
+
 type ChangeFreq =
   | 'never'
   | 'yearly'
@@ -229,6 +231,7 @@ export type Policy = {
 export interface SitemapArgs {
   config: Config;
   request: Request;
+  context: AppLoadContext;
 }
 
 export type SitemapDefinition =
